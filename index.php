@@ -3,25 +3,17 @@
 
 <head>
   <title>Training</title>
-
+  <meta charset="UTF-8">
   <link rel="apple-touch-icon" sizes="180x180" href="images/favicon/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="images/favicon/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="images/favicon/favicon-16x16.png">
   <link rel="manifest" href="manifest.json" />
-  <meta name="msapplication-TileColor" content="#da532c">
-  <meta name="theme-color" content="#ffffff">
-  <meta name="robots" content="noindex" />
-
   <meta name="Description" content="Training attendance app for table tennis club Schenkon">
-  <meta http-equiv="content-type" content="text/html; charset=utf-8">
   <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="no-referrer" />
-  <meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=2.5, user-scalable=yes' />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   <meta http-equiv="refresh" content="90">
-  <meta http-equiv="Content-Language" content="de">
-
+  
   <!-- Include Required Prerequisites -->
   <script src="https://code.jquery.com/jquery-latest.min.js" type="text/javascript"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/css/bootstrap.min.css" />
