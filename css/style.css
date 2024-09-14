@@ -1,0 +1,63 @@
+.dates {
+    background: linear-gradient(left, #808080 0%, #303030 50%, #303030 100%);
+    background: -moz-linear-gradient(left, #808080 0%, #303030 50%, #303030 100%);
+    background: -webkit-linear-gradient(left, #808080 0%, #303030 50%, #303030 100%);
+    background: -ms-linear-gradient(left, #808080 0%, #303030 50%, #303030 100%);
+    background: -o-linear-gradient(left, #808080 0%, #303030 50%, #303030 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#808080, endColorstr=#303030, GradientType=1);
+}
+
+.datepicker {
+    left: 5px !important;
+}
+
+.datepicker table tr td.active.active {
+    color: white !important;
+    background-color: #d69d43 !important;
+    border-color: #d69d43 !important;
+}
+
+.btn-default.active {
+    background-color: #676767;
+    border-color: #676767;
+    color: #fff;
+}
+
+.btn-default.active:hover {
+    background-color: #676767;
+    border-color: #676767;
+    color: #fff;
+}
+
+.btn-primary {
+    background-color: #d69d43;
+    border-color: #d69d43;
+}
+
+.btn-primary:active:hover {
+    background-color: #d69d43;
+    border-color: #d69d43;
+}
+
+.btn-primary:hover {
+    background-color: #d69d43;
+    border-color: #d69d43;
+}
+
+.btn-lg {
+    background-color: #c7c7c7;
+    border-color: #c7c7c7;
+    color: black;
+}
+
+.btn-lg:hover {
+    background-color: #afaeae;
+    border-color: #afaeae;
+    color: black;
+}
+
+.btn-lg:active:hover {
+    background-color: #c7c7c7;
+    border-color: #c7c7c7;
+    color: black;
+}
