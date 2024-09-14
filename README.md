@@ -24,3 +24,7 @@ $days = array('SO', 'MO', 'DI', 'MI', 'DO', 'FR', 'SA'); // Days of the week
 
 ## License
 This project is licensed under the MIT License. See the [LICENSE](./LICENSE) for details.
+<br><br>
+
+## Security Policy
+To report any kinds of vulernabilities, please see [SECURITY](/SECURITY.md).

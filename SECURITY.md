@@ -9,6 +9,6 @@
 
 ## Reporting a Vulnerability
 
-Report vulnerabilites directly to [security@ttcschenkon.ch](mailto:security@ttcschenkon.ch).
+Create an issue or report vulnerabilites directly to [security@ttcschenkon.ch](mailto:security@ttcschenkon.ch).
 
 See also [ttcschenkon.ch](https://ttcschenkon.ch/.well-known/security.txt).
