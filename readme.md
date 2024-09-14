@@ -2,7 +2,7 @@
 This repository provides a simple training poll for sports clubs to manage their training sessions. Please note that it requires a custom configuration to function properly.
 
 ## Configuration
-Before using the poll, ensure you have a *config.php* file set up with the following variables. This file should be located two folders above the root of the repository.
+Before using the poll, ensure you have a **config.php** file set up with the following variables. This file should be located two folders above the root of the repository.
 
 ```php
 $server = "YOUR SERVER";   // Database server address
