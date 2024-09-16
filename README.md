@@ -10,9 +10,8 @@ $dbuser = "YOUR USER";     // Database username
 $dbpwd  = "YOUR PASSWORD"; // Database password
 $db     = "YOUR DATABASE"; // Database name
 $conn   = NULL;            // Connection variable
-$host = $_SERVER['REMOTE_ADDR']; // IP address of current request
-$admin_ip = "YOUR IP ADDRESS";   // IP address for admin access
-$max_limit = 500;               // Daily limit for poll submissions (NULL = no limit)
+$admin_ip = "YOUR IP ADDRESS";  // IP address for admin access
+$max_limit = 100;               // Daily limit for poll submissions (NULL = no limit)
 $today = date("d.m.Y", time());                          // Current date
 $week = date('W', time());                               // Current week number
 $days = array('SO', 'MO', 'DI', 'MI', 'DO', 'FR', 'SA'); // Days of the week

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="de">
 
 <head>
@@ -27,7 +27,7 @@
   <link rel="stylesheet" type="text/css" href="datepicker/css/bootstrap-datepicker3.min.css" />
   <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
   <script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
-  
+
   <link rel="stylesheet" type="text/css" href="css/style.css" />
 
   <script>
@@ -58,116 +58,148 @@
     document.getElementById("usrTxt").innerHTML = jsUser;
   </script>
 
-  <?php
+  <?php  
+    include '../../../config.php';
+    
+    setlocale(LC_ALL, 'de_DE');
+    $host = getUserIP();
 
-  include '../../../config.php';
+    // rate limit for requests/submits 
+    $time_interval = 1; // in seconds
+    $max_requests = 2; // requests per time interval
+    $fast_request_check = ($_SESSION['last_session_request'] > time() - $time_interval);
 
-  setlocale(LC_ALL, 'de_DE');
-
-  // read cookie / storage
-  if (isset($_COOKIE['user'])) {
-    $user = $_COOKIE['user'];
-  }
-
-  function Conn()
-  {
-    global $conn;
-    global $server;
-    global $dbuser;
-    global $dbpwd;
-    global $db;
-
-    $conn = mysqli_connect($server, $dbuser, $dbpwd, $db);
-
-    if (mysqli_connect_errno()) {
-      echo "DB-Error: " . mysqli_connect_error();
-    }
-  };
-
-  function DisConn()
-  {
-    global $conn;
-    mysqli_close($conn);
-  };
-
-  // get form data
-  $name = $_POST['name'];
-  $training = $_POST['training'];
-  $insert = $_POST['insert'];
-  $comment = $_POST['comment'];
-
-  //CHOICE: on
-  //DATE: 27.05.2016
-
-  if ($insert) { //INSERT
-    if (!$name) {
-      die("<br><br><b><font color='red'>Zuwenig Angaben!</font></b><br><br><a href=javascript:history.back()>zurück</a>");
+    if (!isset($_SESSION)) {
+        // this is fresh session, initialize session and its variables
+        session_start();
+        $_SESSION['last_session_request'] = time();
+        $_SESSION['request_cnt'] = 1;
+    } elseif ($fast_request_check && ($_SESSION['request_cnt'] < $max_requests)) {
+      // this is fast, consecutive request, but meets max requests limit
+      $_SESSION['request_cnt']++;
+    } elseif ($fast_request_check) {
+        // this is fast, consecutive request, and exceeds max requests limit - kill it
+        die();
+    } else {
+        // this request is not fast, so reset session variables
+        $_SESSION['last_session_request'] = time();
+        $_SESSION['request_cnt'] = 1;
     }
 
-    setcookie("user", $name, time() + 60 * 60 * 24 * 720, "/"); //720days
-    Conn();
+    // read cookie / username storage
+    if (isset($_COOKIE['user'])) {
+      $user = $_COOKIE['user'];
+    }
 
-    $training = $training == "on" ? "Y" : "N";
-    $datum = date("Y-m-d", strtotime($today));
+    function connectDb() {
+      global $conn;
+      global $server;
+      global $dbuser;
+      global $dbpwd;
+      global $db;
 
-    if (isset($_POST['date'])) {
-      $datum = date("Y-m-d", strtotime($_POST['date']));
-      //check date
-      $datepost = strtotime($_POST['date']);
-      //$datelimit = strtotime($today. ' + 120 days');
-      if ($datepost < strtotime($today) /* || $datepost > $datelimit */) {
-        die("<br><br><b><font color='red'>Ungültiges Datum!</font></b> (darf nicht älter als heute sein)<br><br><a href=javascript:history.back()>zurück</a>");
+      $conn = mysqli_connect($server, $dbuser, $dbpwd, $db);
+
+      if (mysqli_connect_errno()) {
+        echo "DB-Error: " . mysqli_connect_error();
       }
-    }
+    };
 
-    if (!is_null($max_limit) && $training == 'Y' && $datum != '2020-06-19') { //exclude GV
-      $daycount = "SELECT count(*) FROM `training_poll` WHERE date = '$datum' AND choice = 'Y'";
-      $rs = mysqli_query($conn, $daycount) or die(mysqli_error());
+    function disconnectDb() {
+      global $conn;
+      mysqli_close($conn);
+    };
 
-      if (mysqli_fetch_row($rs)[0] >= $max_limit) {
-        die("<br><br><b><font color='red'>Trainings-Limite von '" . $max_limit . "' bereits erreicht!</font></b><br><br><a href=javascript:history.back()>zurück</a>");
+    function getUserIP(){
+      if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+        // ip from share internet
+        $ip = $_SERVER['HTTP_CLIENT_IP'];
+      } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        // ip pass from proxy
+        $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+      } else {
+        $ip = $_SERVER['REMOTE_ADDR'];
       }
+      return $ip;
     }
 
-    $kw = new DateTime($datum);
-    $kw = $kw->format('W');
-    $sql_insert = "insert into `training_poll` (comment,date,user,choice,week,host) values ('" . mysqli_real_escape_string($conn, $comment) . "','" . mysqli_real_escape_string($conn, $datum) . "','" . mysqli_real_escape_string($conn, $name) . "','" . mysqli_real_escape_string($conn, $training) . "','" . $kw . "','" . $host . "')";
+    // get form data
+    $name = strip_tags($_POST['name']);
+    $training = $_POST['training'];
+    $insert = $_POST['insert'];
+    $comment = strip_tags($_POST['comment']);
 
-    if (!mysqli_query($conn, $sql_insert)) {
-      echo "<i><font size='2' color='red'>Einfügen nicht möglich! (" . mysqli_error() . ")</font></i>\n";
+    //CHOICE: on
+    //DATE: 27.05.2016
+
+    if ($insert) { //INSERT
+      if (!$name) {
+        die("<br><br><b><font color='red'>Zuwenig Angaben!</font></b><br><br><a href=javascript:history.back()>zurück</a>");
+      }
+
+      setcookie("user", $name, time() + 60 * 60 * 24 * 720, "/"); //720days
+      connectDb();
+
+      $training = $training == "on" ? "Y" : "N";
+      $datum = date("Y-m-d", strtotime($today));
+
+      if (isset($_POST['date'])) {
+        $datum = date("Y-m-d", strtotime($_POST['date']));
+        //check date
+        $datepost = strtotime($_POST['date']);
+        //$datelimit = strtotime($today. ' + 120 days');
+        if ($datepost < strtotime($today) /* || $datepost > $datelimit */) {
+          die("<br><br><b><font color='red'>Ungültiges Datum!</font></b> (darf nicht älter als heute sein)<br><br><a href=javascript:history.back()>zurück</a>");
+        }
+      }
+
+      if (!is_null($max_limit) && $training == 'Y' && $datum != '2020-06-19') { //exclude GV
+        $daycount = "SELECT count(*) FROM `training_poll` WHERE date = '$datum' AND choice = 'Y'";
+        $rs = mysqli_query($conn, $daycount) or die(mysqli_error());
+
+        if (mysqli_fetch_row($rs)[0] >= $max_limit) {
+          die("<br><br><b><font color='red'>Trainings-Limite von '" . $max_limit . "' bereits erreicht!</font></b><br><br><a href=javascript:history.back()>zurück</a>");
+        }
+      }
+
+      $kw = new DateTime($datum);
+      $kw = $kw->format('W');
+      $sql_insert = "insert into `training_poll` (comment,date,user,choice,week,host) values ('" . mysqli_real_escape_string($conn, $comment) . "','" . mysqli_real_escape_string($conn, $datum) . "','" . mysqli_real_escape_string($conn, $name) . "','" . mysqli_real_escape_string($conn, $training) . "','" . $kw . "','" . $host . "')";
+
+      if (!mysqli_query($conn, $sql_insert)) {
+        echo "<i><font size='2' color='red'>Einfügen nicht möglich! (" . mysqli_error() . ")</font></i>\n";
+      }
+
+      disconnectDb();
+
+      //unset($_POST['name']);
+      //unset($_POST['date']);
+
+      header('Location: https://ttcschenkon.ch/trainingsapp/');
     }
 
-    DisConn();
+    if (isset($_GET['usr'])) { //DELETE
+      connectDb();
+      $datum = $today;
 
-    //unset($_POST['name']);
-    //unset($_POST['date']);
+      if (isset($_GET['dat'])) {
+        $datum = mysqli_escape_string($conn, $_GET['dat']);
+      }
 
-    header('Location: https://ttcschenkon.ch/trainingsapp/');
-  }
+      $deleteStmt = "DELETE FROM `training_poll` WHERE user='" . mysqli_real_escape_string($conn, $_GET['usr']) . "' and date='" . $datum . "'";
 
-  if (isset($_GET['usr'])) { //DELETE
-    Conn();
-    $datum = $today;
+      if (!mysqli_query($conn, $deleteStmt)) {
+        echo "<i><font size='2' color='red'>Löschen nicht möglich! (" . mysqli_error() . ")</font></i>\n";
+      }
 
-    if (isset($_GET['dat'])) {
-      $datum = mysqli_escape_string($conn, $_GET['dat']);
+      disconnectDb();
+      unset($_GET['usr']);
+      unset($_GET['dat']);
+
+      //header('Location: https://ttcschenkon.ch/trainingsapp/');
     }
 
-    $deleteStmt = "DELETE FROM `training_poll` WHERE user='" . mysqli_real_escape_string($conn, $_GET['usr']) . "' and date='" . $datum . "'";
-
-    if (!mysqli_query($conn, $deleteStmt)) {
-      echo "<i><font size='2' color='red'>Löschen nicht möglich! (" . mysqli_error() . ")</font></i>\n";
-    }
-
-    DisConn();
-    unset($_GET['usr']);
-    unset($_GET['dat']);
-
-    //header('Location: https://ttcschenkon.ch/trainingsapp/');
-  }
-
-  echo "<form method='POST' action='" . $_SERVER["PHP_SELF"] . "' name='trainingform' accept-charset='UTF-8'>";
-
+    echo "<form method='POST' action='" . $_SERVER["PHP_SELF"] . "' name='trainingform' accept-charset='UTF-8'>";
   ?>
 
   <div class="row">
@@ -215,119 +247,118 @@
   </form><br />
 
   <?php
-  $seldate = date("Y-m-d", time());
-  $sql = "SELECT * FROM `training_poll` WHERE date >= '$seldate' order by date, choice desc, user";
+    $seldate = date("Y-m-d", time());
+    $sql = "SELECT * FROM `training_poll` WHERE date >= '$seldate' order by date, choice desc, user";
 
-  Conn();
-  $result = mysqli_query($conn, $sql) or die(mysqli_error());
+    connectDb();
+    $result = mysqli_query($conn, $sql) or die(mysqli_error());
 
-  $titleToday = 1;
-  $titleLater = 1;
-  $titleWeek = 1;
-  $openTag = 0;
+    $titleToday = 1;
+    $titleLater = 1;
+    $titleWeek = 1;
+    $openTag = 0;
 
-  echo "<div class='panel panel-default dates' style='border-top-right-radius: 0px; border-right-width: 0px; border-bottom-right-radius: 0px; border-bottom-width: 0px;'><div class='panel-body' style='padding-top: 5px;'>";
+    echo "<div class='panel panel-default dates' style='border-top-right-radius: 0px; border-right-width: 0px; border-bottom-right-radius: 0px; border-bottom-width: 0px;'><div class='panel-body' style='padding-top: 5px;'>";
 
-  while ($zeile = mysqli_fetch_array($result)) {
-    $choice = $zeile['choice'] == 'Y' ? "<font color='#00CD00'>Ja</font>" : "<font color='#CD0000'>Nein</font>";
-    $outDate = new DateTime($zeile['date']);
-    $kw = $outDate->format('W');
+    while ($zeile = mysqli_fetch_array($result)) {
+      $choice = $zeile['choice'] == 'Y' ? "<font color='#00CD00'>Ja</font>" : "<font color='#CD0000'>Nein</font>";
+      $outDate = new DateTime($zeile['date']);
+      $kw = $outDate->format('W');
 
-    if ($seldate == $zeile['date']) {
-      if ($titleToday == 1) {
-        echo "<h3>Heute im Training</h3><table class='.table'>\n";
-        $titleToday = 0;
-        $openTag = 1;
-      }
+      if ($seldate == $zeile['date']) {
+        if ($titleToday == 1) {
+          echo "<h3>Heute im Training</h3><table class='.table'>\n";
+          $titleToday = 0;
+          $openTag = 1;
+        }
 
-      echo "<tr><td nowrap>" . $zeile['user'] . "</td><td>&nbsp;[<b>" . $choice . "</b>]</td>\n";
+        echo "<tr><td nowrap>" . $zeile['user'] . "</td><td>&nbsp;[<b>" . $choice . "</b>]</td>\n";
 
-      if ($zeile['host'] == $host || $host == $admin_ip || $user == $zeile['user'] || $_POST['name'] == $zeile['user'] || $_GET['usr'] == $zeile['user']) {
-        echo "<td nowrap>&nbsp;&nbsp;<font size='2'><a href='index.php?usr=" . $zeile['user'] . "&dat=" . $zeile['date'] . "'><img src='https://www.ttcschenkon.ch/trainingsapp/images/cross.png' alt='Löschen' HEIGHT='14', WIDTH='14' border='0'></a></font></td>\n";
+        if ($zeile['host'] == $host || $host == $admin_ip || $user == $zeile['user'] || strip_tags($_POST['name']) == $zeile['user'] || strip_tags($_GET['usr']) == $zeile['user']) {
+          echo "<td nowrap>&nbsp;&nbsp;<font size='2'><a href='index.php?usr=" . $zeile['user'] . "&dat=" . $zeile['date'] . "'><img src='https://www.ttcschenkon.ch/trainingsapp/images/cross.png' alt='Löschen' HEIGHT='14', WIDTH='14' border='0'></a></font></td>\n";
+        } else {
+          echo "<td/>\n";
+        }
+
+        if ($zeile['comment'] != "") {
+          echo "<td nowrap><font color='#cccccc'>&nbsp;&nbsp;&nbsp;<i>" . $zeile['comment'] . "</i></font></td>\n";
+        }
+        echo "</tr>\n";
+      } else if ($kw == $week) {
+
+        if ($titleWeek == 1) {
+          if ($openTag == 1) echo "</table>\n";
+          echo "<h3>Trainings diese Woche</h3><table class='.table'>\n";
+          $titleWeek = 0;
+          $openTag = 1;
+        }
+
+        echo "<tr><td nowrap>" . $days[$outDate->format('w')] . ", " . $outDate->format('d.m.') . "&nbsp;&nbsp;</td><td nowrap>" . $zeile['user'] . "</td><td>&nbsp;&nbsp;[<b>" . $choice . "</b>]</td>\n";
+
+        if ($zeile['host'] == $host || $host == $admin_ip || $user == $zeile['user']) {
+          echo "<td>&nbsp;&nbsp;<font size='2'><a href='.?usr=" . $zeile['user'] . "&dat=" . $zeile['date'] . "'><img src='https://www.ttcschenkon.ch/trainingsapp/images/cross.png' alt='Löschen' HEIGHT='14', WIDTH='14' border='0'></a></font></td>\n";
+        } else {
+          echo "<td/>\n";
+        }
+
+        if ($zeile['comment'] != "") {
+          echo "<td nowrap><font color='#cccccc'>&nbsp;&nbsp;&nbsp;<i>" . $zeile['comment'] . "</i></font></td>\n";
+        }
+        echo "</tr>\n";
       } else {
-        echo "<td/>\n";
+        if ($titleLater == 1) {
+          if ($openTag == 1) echo "</table>\n";
+
+          echo "<h3>Spätere Trainings</h3><table class='.table'>\n";
+          $titleLater = 0;
+          $openTag = 1;
+        }
+
+        echo "<tr><td nowrap>" . $days[$outDate->format('w')] . ", " . $outDate->format('d.m.') . "&nbsp;&nbsp;</td><td nowrap>" . $zeile['user'] . "</td><td>&nbsp;&nbsp;[<b>" . $choice . "</b>]</td>\n";
+
+        if ($zeile['host'] == $host || $host == $admin_ip || $user == $zeile['user']) {
+          echo "<td>&nbsp;&nbsp;<font size='2'><a href='index.php?usr=" . $zeile['user'] . "&dat=" . $zeile['date'] . "'><img src='https://www.ttcschenkon.ch/trainingsapp/images/cross.png' alt='Löschen' HEIGHT='14', WIDTH='14' border='0'></a></font></td>\n";
+        } else {
+          echo "<td/>\n";
+        }
+
+        if ($zeile['comment'] != "") {
+          echo "<td nowrap><font color='#cccccc'>&nbsp;&nbsp;&nbsp;<i>" . $zeile['comment'] . "</i></font></td>\n";
+        }
+
+        echo "</tr>\n";
       }
-
-      if ($zeile['comment'] != "") {
-        echo "<td nowrap><font color='#cccccc'>&nbsp;&nbsp;&nbsp;<i>" . $zeile['comment'] . "</i></font></td>\n";
-      }
-      echo "</tr>\n";
-    } else if ($kw == $week) {
-
-      if ($titleWeek == 1) {
-        if ($openTag == 1) echo "</table>\n";
-        echo "<h3>Trainings diese Woche</h3><table class='.table'>\n";
-        $titleWeek = 0;
-        $openTag = 1;
-      }
-
-      echo "<tr><td nowrap>" . $days[$outDate->format('w')] . ", " . $outDate->format('d.m.') . "&nbsp;&nbsp;</td><td nowrap>" . $zeile['user'] . "</td><td>&nbsp;&nbsp;[<b>" . $choice . "</b>]</td>\n";
-
-      if ($zeile['host'] == $host || $host == $admin_ip || $user == $zeile['user']) {
-        echo "<td>&nbsp;&nbsp;<font size='2'><a href='.?usr=" . $zeile['user'] . "&dat=" . $zeile['date'] . "'><img src='https://www.ttcschenkon.ch/trainingsapp/images/cross.png' alt='Löschen' HEIGHT='14', WIDTH='14' border='0'></a></font></td>\n";
-      } else {
-        echo "<td/>\n";
-      }
-
-      if ($zeile['comment'] != "") {
-        echo "<td nowrap><font color='#cccccc'>&nbsp;&nbsp;&nbsp;<i>" . $zeile['comment'] . "</i></font></td>\n";
-      }
-      echo "</tr>\n";
-    } else {
-      if ($titleLater == 1) {
-        if ($openTag == 1) echo "</table>\n";
-
-        echo "<h3>Spätere Trainings</h3><table class='.table'>\n";
-        $titleLater = 0;
-        $openTag = 1;
-      }
-
-      echo "<tr><td nowrap>" . $days[$outDate->format('w')] . ", " . $outDate->format('d.m.') . "&nbsp;&nbsp;</td><td nowrap>" . $zeile['user'] . "</td><td>&nbsp;&nbsp;[<b>" . $choice . "</b>]</td>\n";
-
-      if ($zeile['host'] == $host || $host == $admin_ip || $user == $zeile['user']) {
-        echo "<td>&nbsp;&nbsp;<font size='2'><a href='index.php?usr=" . $zeile['user'] . "&dat=" . $zeile['date'] . "'><img src='https://www.ttcschenkon.ch/trainingsapp/images/cross.png' alt='Löschen' HEIGHT='14', WIDTH='14' border='0'></a></font></td>\n";
-      } else {
-        echo "<td/>\n";
-      }
-
-      if ($zeile['comment'] != "") {
-        echo "<td nowrap><font color='#cccccc'>&nbsp;&nbsp;&nbsp;<i>" . $zeile['comment'] . "</i></font></td>\n";
-      }
-
-      echo "</tr>\n";
-    }
-  }
-
-  if ($openTag == 1) {
-    echo "</table>\n";
-  }
-
-  //clubevents
-  $title = 0;
-  $sql = "SELECT * FROM wb_mod_procalendar_actions WHERE date_start >= CURRENT_DATE() and acttype = '3' order by date_start ASC, time_start ASC";
-  $result = mysqli_query($conn, $sql) or die(mysqli_error());
-
-  while ($evt = mysqli_fetch_array($result)) {
-    if ($title == 0) {
-      $title = 1;
-      echo "<h3>Nächste Clubevents</h3>";
-      echo "<table class='.table'>";
     }
 
-    if ($cnt < 5) {
-      $dat = new DateTime($evt['date_start']);
-      echo "<tr><td>" . $dat->format('d.m.y') . " - " . $evt['name'] . "</td></tr>"; // 'd.m.y H:i\ '	  
-      $cnt++;
+    if ($openTag == 1) {
+      echo "</table>\n";
     }
-  }
 
-  if ($title == 1) {
-    echo "</table>";
-  }
+    // clubevents
+    $title = 0;
+    $sql = "SELECT * FROM wb_mod_procalendar_actions WHERE date_start >= CURRENT_DATE() and acttype = '3' order by date_start ASC, time_start ASC";
+    $result = mysqli_query($conn, $sql) or die(mysqli_error());
 
-  mysqli_free_result($result);
-  DisConn();
+    while ($evt = mysqli_fetch_array($result)) {
+      if ($title == 0) {
+        $title = 1;
+        echo "<h3>Nächste Clubevents</h3>";
+        echo "<table class='.table'>";
+      }
 
+      if ($cnt < 5) {
+        $dat = new DateTime($evt['date_start']);
+        echo "<tr><td>" . $dat->format('d.m.y') . " - " . $evt['name'] . "</td></tr>"; // 'd.m.y H:i\ '	  
+        $cnt++;
+      }
+    }
+
+    if ($title == 1) {
+      echo "</table>";
+    }
+
+    mysqli_free_result($result);
+    disconnectDb();
   ?>
 
   </div>
